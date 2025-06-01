@@ -6,17 +6,18 @@ import {
     IDataObject,
     NodeOperationError,
     NodeConnectionType,
-        } from 'n8n-workflow';
+    IHttpRequestOptions,
+} from 'n8n-workflow';
 
 export class FullFunnel implements INodeType {
     description: INodeTypeDescription = {
         displayName: 'FullFunnel Contacts',
         name: 'fullFunnelContacts',
-        icon: 'file:fullfunnel.png',
+        icon: 'file:fullfunnel.svg',
         group: ['transform'],
         version: 1,
         subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
-        description: 'Gerenciar contatos na FullFunnel (HighLevel)',
+        description: 'Gerenciar contatos na FullFunnel (GoHighLevel)',
         defaults: {
             name: 'FullFunnel Contacts',
         },
@@ -83,6 +84,12 @@ export class FullFunnel implements INodeType {
                         description: 'Update a contact',
                         action: 'Update a contact',
                     },
+                    {
+                        name: 'Upsert',
+                        value: 'upsert',
+                        description: 'Create or update a contact',
+                        action: 'Upsert a contact',
+                    },
                 ],
                 default: 'create',
             },
@@ -92,38 +99,14 @@ export class FullFunnel implements INodeType {
                 name: 'email',
                 type: 'string',
                 placeholder: 'name@email.com',
-                required: true,
                 displayOptions: {
                     show: {
                         resource: ['contact'],
-                        operation: ['create'],
+                        operation: ['create', 'upsert'],
                     },
                 },
                 default: '',
-            },
-            {
-                displayName: 'First Name',
-                name: 'firstName',
-                type: 'string',
-                displayOptions: {
-                    show: {
-                        resource: ['contact'],
-                        operation: ['create'],
-                    },
-                },
-                default: '',
-            },
-            {
-                displayName: 'Last Name',
-                name: 'lastName',
-                type: 'string',
-                displayOptions: {
-                    show: {
-                        resource: ['contact'],
-                        operation: ['create'],
-                    },
-                },
-                default: '',
+                description: 'Email address of the contact',
             },
             {
                 displayName: 'Phone',
@@ -132,10 +115,96 @@ export class FullFunnel implements INodeType {
                 displayOptions: {
                     show: {
                         resource: ['contact'],
-                        operation: ['create'],
+                        operation: ['create', 'upsert'],
                     },
                 },
                 default: '',
+                description: 'Phone number of the contact (required for upsert)',
+            },
+            {
+                displayName: 'Additional Fields',
+                name: 'additionalFields',
+                type: 'collection',
+                placeholder: 'Add Field',
+                default: {},
+                displayOptions: {
+                    show: {
+                        resource: ['contact'],
+                        operation: ['create', 'upsert'],
+                    },
+                },
+                options: [
+                    {
+                        displayName: 'Name',
+                        name: 'name',
+                        type: 'string',
+                        default: '',
+                        description: 'Full name of the contact',
+                    },
+                    {
+                        displayName: 'First Name',
+                        name: 'firstName',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Last Name',
+                        name: 'lastName',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Address',
+                        name: 'address1',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'City',
+                        name: 'city',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'State',
+                        name: 'state',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Country',
+                        name: 'country',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Postal Code',
+                        name: 'postalCode',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Tags',
+                        name: 'tags',
+                        type: 'string',
+                        default: '',
+                        description: 'Comma-separated list of tags',
+                    },
+                    {
+                        displayName: 'Source',
+                        name: 'source',
+                        type: 'string',
+                        default: '',
+                        description: 'Source of the contact',
+                    },
+                    {
+                        displayName: 'Custom Fields',
+                        name: 'customFields',
+                        type: 'json',
+                        default: '{}',
+                        description: 'Custom fields as JSON object',
+                    },
+                ],
             },
             // Get/Delete Contact Fields
             {
@@ -150,6 +219,7 @@ export class FullFunnel implements INodeType {
                     },
                 },
                 default: '',
+                description: 'The ID of the contact',
             },
             // Update Contact Fields
             {
@@ -173,6 +243,13 @@ export class FullFunnel implements INodeType {
                         default: '',
                     },
                     {
+                        displayName: 'Name',
+                        name: 'name',
+                        type: 'string',
+                        default: '',
+                        description: 'Full name of the contact',
+                    },
+                    {
                         displayName: 'First Name',
                         name: 'firstName',
                         type: 'string',
@@ -189,6 +266,50 @@ export class FullFunnel implements INodeType {
                         name: 'phone',
                         type: 'string',
                         default: '',
+                    },
+                    {
+                        displayName: 'Address',
+                        name: 'address1',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'City',
+                        name: 'city',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'State',
+                        name: 'state',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Country',
+                        name: 'country',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Postal Code',
+                        name: 'postalCode',
+                        type: 'string',
+                        default: '',
+                    },
+                    {
+                        displayName: 'Tags',
+                        name: 'tags',
+                        type: 'string',
+                        default: '',
+                        description: 'Comma-separated list of tags',
+                    },
+                    {
+                        displayName: 'Custom Fields',
+                        name: 'customFields',
+                        type: 'json',
+                        default: '{}',
+                        description: 'Custom fields as JSON object',
                     },
                 ],
             },
@@ -224,6 +345,42 @@ export class FullFunnel implements INodeType {
                 default: 50,
                 description: 'Max number of results to return',
             },
+            {
+                displayName: 'Filters',
+                name: 'filters',
+                type: 'collection',
+                placeholder: 'Add Filter',
+                default: {},
+                displayOptions: {
+                    show: {
+                        resource: ['contact'],
+                        operation: ['getAll'],
+                    },
+                },
+                options: [
+                    {
+                        displayName: 'Query',
+                        name: 'query',
+                        type: 'string',
+                        default: '',
+                        description: 'Search query to filter contacts',
+                    },
+                    {
+                        displayName: 'Tags',
+                        name: 'tags',
+                        type: 'string',
+                        default: '',
+                        description: 'Comma-separated list of tags to filter by',
+                    },
+                    {
+                        displayName: 'Start After',
+                        name: 'startAfter',
+                        type: 'string',
+                        default: '',
+                        description: 'Contact ID to start after (for pagination)',
+                    },
+                ],
+            },
         ],
     };
 
@@ -234,126 +391,251 @@ export class FullFunnel implements INodeType {
         const operation = this.getNodeParameter('operation', 0);
 
         const credentials = await this.getCredentials('fullFunnelApi');
-        const apiKey = credentials.apiKey as string;
         const locationId = credentials.locationId as string;
 
-        const baseURL = 'https://services.leadconnectorhq.com';
+        // Use the correct API v2 base URL
+        const baseURL = 'https://rest.gohighlevel.com/v2';
 
         for (let i = 0; i < items.length; i++) {
             try {
                 if (resource === 'contact') {
+                    let response: any;
+
                     if (operation === 'create') {
                         const email = this.getNodeParameter('email', i) as string;
-                        const firstName = this.getNodeParameter('firstName', i) as string;
-                        const lastName = this.getNodeParameter('lastName', i) as string;
                         const phone = this.getNodeParameter('phone', i) as string;
+                        const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
 
-                        const body = {
+                        const body: IDataObject = {
                             email,
-                            firstName,
-                            lastName,
                             phone,
                             locationId,
                         };
 
-                        const response = await this.helpers.request({
+                        // Add additional fields
+                        if (additionalFields.name) body.name = additionalFields.name;
+                        if (additionalFields.firstName) body.firstName = additionalFields.firstName;
+                        if (additionalFields.lastName) body.lastName = additionalFields.lastName;
+                        if (additionalFields.address1) body.address1 = additionalFields.address1;
+                        if (additionalFields.city) body.city = additionalFields.city;
+                        if (additionalFields.state) body.state = additionalFields.state;
+                        if (additionalFields.country) body.country = additionalFields.country;
+                        if (additionalFields.postalCode) body.postalCode = additionalFields.postalCode;
+                        if (additionalFields.source) body.source = additionalFields.source;
+                        
+                        // Handle tags
+                        if (additionalFields.tags) {
+                            body.tags = additionalFields.tags.toString().split(',').map(tag => tag.trim());
+                        }
+                        
+                        // Handle custom fields
+                        if (additionalFields.customFields) {
+                            try {
+                                const customFields = typeof additionalFields.customFields === 'string' 
+                                    ? JSON.parse(additionalFields.customFields) 
+                                    : additionalFields.customFields;
+                                body.customFields = customFields;
+                            } catch (e) {
+                                throw new Error('Invalid JSON in custom fields');
+                            }
+                        }
+
+                        const options: IHttpRequestOptions = {
                             method: 'POST',
-                            url: `${baseURL}/contacts/`,
-                            headers: {
-                                'Authorization': `Bearer ${apiKey}`,
-                                'Version': '2021-07-28',
-                            },
+                            url: `${baseURL}/contacts`,
                             body,
                             json: true,
-                        });
+                        };
 
-                        returnData.push({ json: response });
+                        response = await this.helpers.requestWithAuthentication.call(this, 'fullFunnelApi', options);
+                        returnData.push({ json: response.contact || response });
                     }
 
                     if (operation === 'get') {
                         const contactId = this.getNodeParameter('contactId', i) as string;
 
-                        const response = await this.helpers.request({
+                        const options: IHttpRequestOptions = {
                             method: 'GET',
                             url: `${baseURL}/contacts/${contactId}`,
-                            headers: {
-                                'Authorization': `Bearer ${apiKey}`,
-                                'Version': '2021-07-28',
-                            },
                             json: true,
-                        });
+                        };
 
-                        returnData.push({ json: response.contact });
+                        response = await this.helpers.requestWithAuthentication.call(this, 'fullFunnelApi', options);
+                        returnData.push({ json: response.contact || response });
                     }
 
                     if (operation === 'getAll') {
                         const returnAll = this.getNodeParameter('returnAll', i);
                         const limit = this.getNodeParameter('limit', i, 50) as number;
+                        const filters = this.getNodeParameter('filters', i) as IDataObject;
 
                         const qs: IDataObject = {
                             locationId,
                             limit: returnAll ? 100 : limit,
                         };
 
-                        const response = await this.helpers.request({
+                        // Add filters
+                        if (filters.query) qs.query = filters.query;
+                        if (filters.tags) qs.tags = filters.tags;
+                        if (filters.startAfter) qs.startAfter = filters.startAfter;
+
+                        const options: IHttpRequestOptions = {
                             method: 'GET',
-                            url: `${baseURL}/contacts/`,
-                            headers: {
-                                'Authorization': `Bearer ${apiKey}`,
-                                'Version': '2021-07-28',
-                            },
+                            url: `${baseURL}/contacts`,
                             qs,
                             json: true,
-                        });
+                        };
 
-                        if (returnAll) {
-                            returnData.push(...response.contacts.map((contact: IDataObject) => ({ json: contact })));
+                        response = await this.helpers.requestWithAuthentication.call(this, 'fullFunnelApi', options);
+                        
+                        const contacts = response.contacts || [];
+                        
+                        if (returnAll && contacts.length === 100) {
+                            // Implement pagination if needed
+                            let allContacts = [...contacts];
+                            let startAfter = contacts[contacts.length - 1]?.id;
+                            
+                            while (startAfter && allContacts.length < 500) { // Limit to 500 to avoid infinite loops
+                                qs.startAfter = startAfter;
+                                const nextResponse = await this.helpers.requestWithAuthentication.call(this, 'fullFunnelApi', {
+                                    ...options,
+                                    qs,
+                                });
+                                const nextContacts = nextResponse.contacts || [];
+                                if (nextContacts.length === 0) break;
+                                allContacts.push(...nextContacts);
+                                startAfter = nextContacts[nextContacts.length - 1]?.id;
+                            }
+                            
+                            returnData.push(...allContacts.map((contact: IDataObject) => ({ json: contact })));
                         } else {
-                            returnData.push(...response.contacts.slice(0, limit).map((contact: IDataObject) => ({ json: contact })));
+                            returnData.push(...contacts.slice(0, limit).map((contact: IDataObject) => ({ json: contact })));
                         }
                     }
 
                     if (operation === 'update') {
                         const contactId = this.getNodeParameter('contactId', i) as string;
-                        const updateFields = this.getNodeParameter('updateFields', i);
+                        const updateFields = this.getNodeParameter('updateFields', i) as IDataObject;
 
-                        const body = {
-                            ...updateFields,
-                        };
+                        const body: IDataObject = {};
 
-                        const response = await this.helpers.request({
+                        // Add update fields
+                        if (updateFields.email) body.email = updateFields.email;
+                        if (updateFields.phone) body.phone = updateFields.phone;
+                        if (updateFields.name) body.name = updateFields.name;
+                        if (updateFields.firstName) body.firstName = updateFields.firstName;
+                        if (updateFields.lastName) body.lastName = updateFields.lastName;
+                        if (updateFields.address1) body.address1 = updateFields.address1;
+                        if (updateFields.city) body.city = updateFields.city;
+                        if (updateFields.state) body.state = updateFields.state;
+                        if (updateFields.country) body.country = updateFields.country;
+                        if (updateFields.postalCode) body.postalCode = updateFields.postalCode;
+                        
+                        // Handle tags
+                        if (updateFields.tags) {
+                            body.tags = updateFields.tags.toString().split(',').map(tag => tag.trim());
+                        }
+                        
+                        // Handle custom fields
+                        if (updateFields.customFields) {
+                            try {
+                                const customFields = typeof updateFields.customFields === 'string' 
+                                    ? JSON.parse(updateFields.customFields) 
+                                    : updateFields.customFields;
+                                body.customFields = customFields;
+                            } catch (e) {
+                                throw new Error('Invalid JSON in custom fields');
+                            }
+                        }
+
+                        const options: IHttpRequestOptions = {
                             method: 'PUT',
                             url: `${baseURL}/contacts/${contactId}`,
-                            headers: {
-                                'Authorization': `Bearer ${apiKey}`,
-                                'Version': '2021-07-28',
-                            },
                             body,
                             json: true,
-                        });
+                        };
 
-                        returnData.push({ json: response.contact });
+                        response = await this.helpers.requestWithAuthentication.call(this, 'fullFunnelApi', options);
+                        returnData.push({ json: response.contact || response });
                     }
 
                     if (operation === 'delete') {
                         const contactId = this.getNodeParameter('contactId', i) as string;
 
-                        await this.helpers.request({
+                        const options: IHttpRequestOptions = {
                             method: 'DELETE',
                             url: `${baseURL}/contacts/${contactId}`,
-                            headers: {
-                                'Authorization': `Bearer ${apiKey}`,
-                                'Version': '2021-07-28',
-                            },
                             json: true,
-                        });
+                        };
 
-                        returnData.push({ json: { success: true } });
+                        response = await this.helpers.requestWithAuthentication.call(this, 'fullFunnelApi', options);
+                        returnData.push({ json: { success: true, contactId } });
+                    }
+
+                    if (operation === 'upsert') {
+                        const email = this.getNodeParameter('email', i) as string;
+                        const phone = this.getNodeParameter('phone', i) as string;
+                        const additionalFields = this.getNodeParameter('additionalFields', i) as IDataObject;
+
+                        if (!email && !phone) {
+                            throw new Error('Either email or phone is required for upsert operation');
+                        }
+
+                        const body: IDataObject = {
+                            locationId,
+                        };
+
+                        // Add required fields
+                        if (email) body.email = email;
+                        if (phone) body.phone = phone;
+
+                        // Add additional fields
+                        if (additionalFields.name) body.name = additionalFields.name;
+                        if (additionalFields.firstName) body.firstName = additionalFields.firstName;
+                        if (additionalFields.lastName) body.lastName = additionalFields.lastName;
+                        if (additionalFields.address1) body.address1 = additionalFields.address1;
+                        if (additionalFields.city) body.city = additionalFields.city;
+                        if (additionalFields.state) body.state = additionalFields.state;
+                        if (additionalFields.country) body.country = additionalFields.country;
+                        if (additionalFields.postalCode) body.postalCode = additionalFields.postalCode;
+                        if (additionalFields.source) body.source = additionalFields.source;
+                        
+                        // Handle tags
+                        if (additionalFields.tags) {
+                            body.tags = additionalFields.tags.toString().split(',').map(tag => tag.trim());
+                        }
+                        
+                        // Handle custom fields
+                        if (additionalFields.customFields) {
+                            try {
+                                const customFields = typeof additionalFields.customFields === 'string' 
+                                    ? JSON.parse(additionalFields.customFields) 
+                                    : additionalFields.customFields;
+                                body.customFields = customFields;
+                            } catch (e) {
+                                throw new Error('Invalid JSON in custom fields');
+                            }
+                        }
+
+                        const options: IHttpRequestOptions = {
+                            method: 'POST',
+                            url: `${baseURL}/contacts/upsert`,
+                            body,
+                            json: true,
+                        };
+
+                        response = await this.helpers.requestWithAuthentication.call(this, 'fullFunnelApi', options);
+                        returnData.push({ json: response.contact || response });
                     }
                 }
             } catch (error) {
                 if (this.continueOnFail()) {
-                    returnData.push({ json: { error: error.message } });
+                    returnData.push({ 
+                        json: { 
+                            error: error.message,
+                            details: error.response?.body || error.response?.data || 'No additional details'
+                        } 
+                    });
                     continue;
                 }
                 throw new NodeOperationError(this.getNode(), error);
