@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-fullfunnel",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "n8n nodes for FullFunnel (GoHighLevel) integration - Contacts, Tags and Opportunities",
   "keywords": [
     "n8n-community-node-package",
@@ -33,9 +33,9 @@
       "dist/credentials/FullFunnelApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/FullFunnel/FullFunnel.node.js",
-      "dist/nodes/FullFunnel/FullFunnelTags.node.js",
-      "dist/nodes/FullFunnel/FullFunnelOpportunities.node.js"
+      "dist/nodes/FullFunnel.node.js",
+      "dist/nodes/FullFunnelTags.node.js",
+      "dist/nodes/FullFunnelOpportunities.node.js"
     ]
   },
   "files": [
