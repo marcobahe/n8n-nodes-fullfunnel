@@ -1,22 +1,55 @@
 {
-  "name": "n8n-nodes-fullfunnel",
-  "version": "1.0.0",
-  "description": "",
+  "name": "n8n-nodes-fullfunnel-contacts",
+  "version": "1.0.1",
+  "description": "n8n node para integração com FullFunnel (HighLevel)",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "fullfunnel",
+    "highlevel",
+    "crm"
+  ],
+  "author": {
+    "name": "Marco Bahe",
+    "email": "marcobahe@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/seu-usuario/n8n-nodes-fullfunnel-contacts"
+  },
+  "license": "MIT",
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/FullFunnelApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/FullFunnel/FullFunnel.node.js"
+    ]
+  },
+  "files": [
+    "dist"
+  ],
   "main": "index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "echo 'Error: no test specified' && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "n8n-core": "^1.14.1",
-    "n8n-workflow": "^1.82.0"
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint . --ext .ts --fix",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build && npm run lint -c .eslintrc.prepublish.json nodes credentials package.json"
   },
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "@types/node": "^20.10.5",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-n8n-nodes-base": "^1.16.1",
+    "n8n-workflow": "*",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
   }
 }

@@ -1,17 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FullFunnel = void 0;
+const n8n_workflow_1 = require("n8n-workflow");
 class FullFunnel {
     constructor() {
         this.description = {
-            displayName: 'FullFunnel',
-            name: 'fullFunnel',
-            icon: 'file:fullfunnel.svg',
+            displayName: 'FullFunnel Contacts',
+            name: 'fullFunnelContacts',
+            icon: 'file:fullfunnel.png',
             group: ['transform'],
             version: 1,
-            description: 'Integração com a API da FullFunnel',
+            subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
+            description: 'Gerenciar contatos na FullFunnel (HighLevel)',
             defaults: {
-                name: 'FullFunnel',
+                name: 'FullFunnel Contacts',
             },
             inputs: ["main"],
             outputs: ["main"],
@@ -23,92 +25,195 @@ class FullFunnel {
             ],
             properties: [
                 {
-                    displayName: 'Recurso',
+                    displayName: 'Resource',
                     name: 'resource',
                     type: 'options',
                     noDataExpression: true,
                     options: [
                         {
-                            name: 'Lead',
-                            value: 'lead',
+                            name: 'Contact',
+                            value: 'contact',
                         },
                     ],
-                    default: 'lead',
+                    default: 'contact',
                 },
                 {
-                    displayName: 'Operação',
+                    displayName: 'Operation',
                     name: 'operation',
                     type: 'options',
                     noDataExpression: true,
                     displayOptions: {
                         show: {
-                            resource: ['lead'],
+                            resource: ['contact'],
                         },
                     },
                     options: [
                         {
-                            name: 'Criar',
+                            name: 'Create',
                             value: 'create',
-                            description: 'Criar um novo lead',
+                            description: 'Create a new contact',
+                            action: 'Create a contact',
+                        },
+                        {
+                            name: 'Delete',
+                            value: 'delete',
+                            description: 'Delete a contact',
+                            action: 'Delete a contact',
+                        },
+                        {
+                            name: 'Get',
+                            value: 'get',
+                            description: 'Get a contact by ID',
+                            action: 'Get a contact',
+                        },
+                        {
+                            name: 'Get All',
+                            value: 'getAll',
+                            description: 'Get all contacts',
+                            action: 'Get all contacts',
+                        },
+                        {
+                            name: 'Update',
+                            value: 'update',
+                            description: 'Update a contact',
+                            action: 'Update a contact',
                         },
                     ],
                     default: 'create',
                 },
                 {
-                    displayName: 'Nome',
-                    name: 'name',
-                    type: 'string',
-                    default: '',
-                    required: true,
-                    displayOptions: {
-                        show: {
-                            resource: ['lead'],
-                            operation: ['create'],
-                        },
-                    },
-                    description: 'Nome do lead',
-                },
-                {
                     displayName: 'Email',
                     name: 'email',
                     type: 'string',
-                    default: '',
+                    placeholder: 'name@email.com',
                     required: true,
                     displayOptions: {
                         show: {
-                            resource: ['lead'],
+                            resource: ['contact'],
                             operation: ['create'],
                         },
                     },
-                    description: 'Email do lead',
+                    default: '',
                 },
                 {
-                    displayName: 'Telefone',
+                    displayName: 'First Name',
+                    name: 'firstName',
+                    type: 'string',
+                    displayOptions: {
+                        show: {
+                            resource: ['contact'],
+                            operation: ['create'],
+                        },
+                    },
+                    default: '',
+                },
+                {
+                    displayName: 'Last Name',
+                    name: 'lastName',
+                    type: 'string',
+                    displayOptions: {
+                        show: {
+                            resource: ['contact'],
+                            operation: ['create'],
+                        },
+                    },
+                    default: '',
+                },
+                {
+                    displayName: 'Phone',
                     name: 'phone',
                     type: 'string',
-                    default: '',
-                    required: true,
                     displayOptions: {
                         show: {
-                            resource: ['lead'],
+                            resource: ['contact'],
                             operation: ['create'],
                         },
                     },
-                    description: 'Telefone do lead',
+                    default: '',
                 },
                 {
-                    displayName: 'Location ID',
-                    name: 'locationId',
+                    displayName: 'Contact ID',
+                    name: 'contactId',
                     type: 'string',
-                    default: '',
                     required: true,
                     displayOptions: {
                         show: {
-                            resource: ['lead'],
-                            operation: ['create'],
+                            resource: ['contact'],
+                            operation: ['get', 'delete', 'update'],
                         },
                     },
-                    description: 'ID da localização no FullFunnel',
+                    default: '',
+                },
+                {
+                    displayName: 'Update Fields',
+                    name: 'updateFields',
+                    type: 'collection',
+                    placeholder: 'Add Field',
+                    default: {},
+                    displayOptions: {
+                        show: {
+                            resource: ['contact'],
+                            operation: ['update'],
+                        },
+                    },
+                    options: [
+                        {
+                            displayName: 'Email',
+                            name: 'email',
+                            type: 'string',
+                            placeholder: 'name@email.com',
+                            default: '',
+                        },
+                        {
+                            displayName: 'First Name',
+                            name: 'firstName',
+                            type: 'string',
+                            default: '',
+                        },
+                        {
+                            displayName: 'Last Name',
+                            name: 'lastName',
+                            type: 'string',
+                            default: '',
+                        },
+                        {
+                            displayName: 'Phone',
+                            name: 'phone',
+                            type: 'string',
+                            default: '',
+                        },
+                    ],
+                },
+                {
+                    displayName: 'Return All',
+                    name: 'returnAll',
+                    type: 'boolean',
+                    displayOptions: {
+                        show: {
+                            resource: ['contact'],
+                            operation: ['getAll'],
+                        },
+                    },
+                    default: false,
+                    description: 'Whether to return all results or only up to a given limit',
+                },
+                {
+                    displayName: 'Limit',
+                    name: 'limit',
+                    type: 'number',
+                    displayOptions: {
+                        show: {
+                            resource: ['contact'],
+                            operation: ['getAll'],
+                            returnAll: [false],
+                        },
+                    },
+                    typeOptions: {
+                        minValue: 1,
+                        maxValue: 100,
+                    },
+                    default: 50,
+                    description: 'Max number of results to return',
                 },
             ],
         };
@@ -116,51 +221,115 @@ class FullFunnel {
     async execute() {
         const items = this.getInputData();
         const returnData = [];
+        const resource = this.getNodeParameter('resource', 0);
+        const operation = this.getNodeParameter('operation', 0);
+        const credentials = await this.getCredentials('fullFunnelApi');
+        const apiKey = credentials.apiKey;
+        const locationId = credentials.locationId;
+        const baseURL = 'https://services.leadconnectorhq.com';
         for (let i = 0; i < items.length; i++) {
             try {
-                const resource = this.getNodeParameter('resource', i);
-                const operation = this.getNodeParameter('operation', i);
-                if (resource === 'lead' && operation === 'create') {
-                    const name = this.getNodeParameter('name', i);
-                    const email = this.getNodeParameter('email', i);
-                    const phone = this.getNodeParameter('phone', i);
-                    const locationId = this.getNodeParameter('locationId', i);
-                    const credentials = await this.getCredentials('fullFunnelApi');
-                    const baseUrl = 'https://rest.gohighlevel.com/v1';
-                    const options = {
-                        method: 'POST',
-                        uri: `${baseUrl}/contacts/`,
-                        headers: {
-                            'Authorization': `Bearer ${credentials.apiKey}`,
-                            'Content-Type': 'application/json',
-                            'Version': '2021-07-28',
-                        },
-                        body: {
-                            firstName: name,
-                            email: email,
-                            phone: phone,
-                            locationId: locationId,
-                        },
-                        json: true,
-                    };
-                    const response = await this.helpers.request(options);
-                    returnData.push({
-                        json: response,
-                        pairedItem: { item: i },
-                    });
+                if (resource === 'contact') {
+                    if (operation === 'create') {
+                        const email = this.getNodeParameter('email', i);
+                        const firstName = this.getNodeParameter('firstName', i);
+                        const lastName = this.getNodeParameter('lastName', i);
+                        const phone = this.getNodeParameter('phone', i);
+                        const body = {
+                            email,
+                            firstName,
+                            lastName,
+                            phone,
+                            locationId,
+                        };
+                        const response = await this.helpers.request({
+                            method: 'POST',
+                            url: `${baseURL}/contacts/`,
+                            headers: {
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Version': '2021-07-28',
+                            },
+                            body,
+                            json: true,
+                        });
+                        returnData.push({ json: response });
+                    }
+                    if (operation === 'get') {
+                        const contactId = this.getNodeParameter('contactId', i);
+                        const response = await this.helpers.request({
+                            method: 'GET',
+                            url: `${baseURL}/contacts/${contactId}`,
+                            headers: {
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Version': '2021-07-28',
+                            },
+                            json: true,
+                        });
+                        returnData.push({ json: response.contact });
+                    }
+                    if (operation === 'getAll') {
+                        const returnAll = this.getNodeParameter('returnAll', i);
+                        const limit = this.getNodeParameter('limit', i, 50);
+                        const qs = {
+                            locationId,
+                            limit: returnAll ? 100 : limit,
+                        };
+                        const response = await this.helpers.request({
+                            method: 'GET',
+                            url: `${baseURL}/contacts/`,
+                            headers: {
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Version': '2021-07-28',
+                            },
+                            qs,
+                            json: true,
+                        });
+                        if (returnAll) {
+                            returnData.push(...response.contacts.map((contact) => ({ json: contact })));
+                        }
+                        else {
+                            returnData.push(...response.contacts.slice(0, limit).map((contact) => ({ json: contact })));
+                        }
+                    }
+                    if (operation === 'update') {
+                        const contactId = this.getNodeParameter('contactId', i);
+                        const updateFields = this.getNodeParameter('updateFields', i);
+                        const body = {
+                            ...updateFields,
+                        };
+                        const response = await this.helpers.request({
+                            method: 'PUT',
+                            url: `${baseURL}/contacts/${contactId}`,
+                            headers: {
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Version': '2021-07-28',
+                            },
+                            body,
+                            json: true,
+                        });
+                        returnData.push({ json: response.contact });
+                    }
+                    if (operation === 'delete') {
+                        const contactId = this.getNodeParameter('contactId', i);
+                        await this.helpers.request({
+                            method: 'DELETE',
+                            url: `${baseURL}/contacts/${contactId}`,
+                            headers: {
+                                'Authorization': `Bearer ${apiKey}`,
+                                'Version': '2021-07-28',
+                            },
+                            json: true,
+                        });
+                        returnData.push({ json: { success: true } });
+                    }
                 }
             }
             catch (error) {
                 if (this.continueOnFail()) {
-                    returnData.push({
-                        json: {
-                            error: error.message,
-                        },
-                        pairedItem: { item: i },
-                    });
+                    returnData.push({ json: { error: error.message } });
                     continue;
                 }
-                throw error;
+                throw new n8n_workflow_1.NodeOperationError(this.getNode(), error);
             }
         }
         return [returnData];
